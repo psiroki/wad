@@ -89,18 +89,18 @@ class FloatType extends WasmType {
 class Immediate {
   const Immediate(this.name, this.type);
 
-  FutureOr<String> readAndFormat(StreamReader reader) {
+  FutureOr<String> readAndFormat(StreamReader reader, {bool ignoreName: false}) {
     FutureOr<String> value = type.readAndFormat(reader);
     if (value == null) return null;
-    if (value is Future) return value.then(_formatWithValueString);
-    return _formatWithValueString(value);
+    if (value is Future) return value.then((value) => _formatWithValueString(value, ignoreName: ignoreName));
+    return _formatWithValueString(value, ignoreName: ignoreName);
   }
 
   @override
   String toString() => "${name ?? ''}: $type";
 
-  String _formatWithValueString(String value) {
-    if (name == null) return value;
+  String _formatWithValueString(String value, {bool ignoreName: false}) {
+    if (ignoreName || name == null) return value;
     return "$name: $value";
   }
 
@@ -114,7 +114,7 @@ class Opcode {
   FutureOr<String> readImmediatesAndFormat(StreamReader reader, {int indent: 0}) async {
     StringBuffer sb = new StringBuffer(mnemonic);
     for (Immediate im in immediates) {
-      String s = await im.readAndFormat(reader);
+      String s = await im.readAndFormat(reader, ignoreName: immediates.length == 1);
       if (s != null) sb..write(" ")..write(s);
     }
     if (docs?.isNotEmpty ?? false) {
@@ -136,6 +136,8 @@ class Opcode {
   final String docs;
 }
 
+const int typeSectionId = 1;
+const int functionSectionId = 3;
 const int exportSectionId = 7;
 const int codeSectionId = 10;
 
@@ -150,9 +152,9 @@ const Map<int, String> knownTypes = const {
 };
 
 const Map<int, String> knownSectionIds = const {
-  1: "Type (function signature declarations)",
+  typeSectionId: "Type (function signature declarations)",
   2: "Import (import declarations)",
-  3: "Function (function declarations)",
+  functionSectionId: "Function (function declarations)",
   4: "Table (indirect function table and other tables)",
   5: "Memory (memory attributes)",
   6: "Global (global declarations)",

@@ -2,16 +2,18 @@
 
 ## Usage
 
-```dart bin/wasm_dump.dart [path_to_wasm_file] [--rawCode] [--doNotParse]```
+```
+dart bin/wasm_dump.dart [path_to_wasm_file] [--rawCode] [--doNotParse]
+```
 
 - `path_to_wasm_file`: a path to a WASM binary file, the file will be read from stdin if missing
 - `--rawCode`: do not disassemble, dump the bytecode instead
-- `--doNotParse`: do not parse known sections, just dump the bytes themselves (kind of implies `--rawCode`)
+- `--doNotParse`: do not parse any sections, just dump the bytes themselves (kind of implies `--rawCode`)
 
 ## Example output
 
-A simple wasm file with two functions: one returns the sum of the two parameters, the second one is a factorial
-function.
+This is the dump of a simple WASM file with two functions: one returns the sum of the two parameters,
+the second one is a factorial function. Some supported sections are parsed and the code is disassembled.
 
 ```
 Magic:
@@ -23,13 +25,15 @@ Version:
 Section code: 0x01 Type (function signature declarations)
 Section size: 0x0c
 
-02 60 02 7f 7f 01 7f 60  01 7f 01 7f              |.`.....`....|
+- Function type #0 (i32, i32) → (i32)
+- Function type #1 (i32) → (i32)
 
 
 Section code: 0x03 Function (function declarations)
 Section size: 0x03
 
-02 00 01                                          |...|
+- Function #0 is of function type #0
+- Function #1 is of function type #1
 
 
 Section code: 0x05 Memory (memory attributes)
@@ -51,30 +55,30 @@ Section size: 0x2a
 
 - Function #0
 
-    get_local local_index: 0                                                    # read a local variable or parameter
-    get_local local_index: 1                                                    # read a local variable or parameter
+    get_local 0                                                                 # read a local variable or parameter
+    get_local 1                                                                 # read a local variable or parameter
     i32.add
   end                                                                           # end a block, loop, or if
 
 - Function #1
   Local #0: 1 of i32
 
-    i32.const value: 1                                                          # a constant value interpreted as i32
-    set_local local_index: 1                                                    # write a local variable or parameter
+    i32.const 1                                                                 # a constant value interpreted as i32
+    set_local 1                                                                 # write a local variable or parameter
     loop                                                                        # begin a block which can also form control flow loops
-      get_local local_index: 0                                                  # read a local variable or parameter
-      get_local local_index: 1                                                  # read a local variable or parameter
+      get_local 0                                                               # read a local variable or parameter
+      get_local 1                                                               # read a local variable or parameter
       i32.mul
-      set_local local_index: 1                                                  # write a local variable or parameter
-      get_local local_index: 0                                                  # read a local variable or parameter
-      i32.const value: 1                                                        # a constant value interpreted as i32
+      set_local 1                                                               # write a local variable or parameter
+      get_local 0                                                               # read a local variable or parameter
+      i32.const 1                                                               # a constant value interpreted as i32
       i32.sub
-      tee_local local_index: 0                                                  # write a local variable or parameter and return the same value
-      i32.const value: 0                                                        # a constant value interpreted as i32
+      tee_local 0                                                               # write a local variable or parameter and return the same value
+      i32.const 0                                                               # a constant value interpreted as i32
       i32.ne
-      br_if relative_depth: 0                                                   # conditional break that targets an outer nested block
+      br_if 0                                                                   # conditional break that targets an outer nested block
     end                                                                         # end a block, loop, or if
-    get_local local_index: 1                                                    # read a local variable or parameter
+    get_local 1                                                                 # read a local variable or parameter
   end                                                                           # end a block, loop, or if
 
 

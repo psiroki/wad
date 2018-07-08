@@ -33,6 +33,12 @@ class WasmDump {
       bool dump = false;
       if (!doNotParse) {
         switch (sectionId) {
+          case typeSectionId:
+            await _dumpTypeSection(end);
+            break;
+          case functionSectionId:
+            await _dumpFunctionSection();
+            break;
           case codeSectionId:
             await _dumpCodeSection();
             break;
@@ -46,6 +52,40 @@ class WasmDump {
       if (dump) out.dumpBytes(await reader.readBytes(length));
     }
   }
+
+  Future<Null> _dumpFunctionSection() async {
+    int count = await reader.readVarUint(32);
+    for (int i = 0; i < count; ++i) {
+      int typeIndex = await reader.readVarUint(32);
+      out.writeln("- Function #$i is of function type #$typeIndex");
+    }
+  }
+
+  Future<Null> _dumpTypeSection(int end) async {
+    int count = await reader.readVarUint(32);
+    for (int i = 0; i < count; ++i) {
+      int type = await reader.readVarUint(7);
+      if (type != 0x60) {
+        out.writeln("- unexpected type ${typeToString(type)}, dumping the rest");
+        out.dumpBytes(await reader.readBytes(end - reader.bytesRead));
+        break;
+      }
+      out.write("- Function type #$i (");
+      int paramCount = await reader.readVarUint(32);
+      for (int j = 0; j < paramCount; ++j) {
+        if (j > 0) out.write(", ");
+        out.write(typeToString(await reader.readVarUint(7)));
+      }
+      out.write(") \u2192 (");
+      int returnCount = await reader.readVarUint(1);
+      for (int j = 0; j < returnCount; ++j) {
+        if (j > 0) out.write(", ");
+        out.write(typeToString(await reader.readVarUint(7)));
+      }
+      out.writeln(")");
+    }
+  }
+
   Future<Null> _dumpCodeSection() async {
     int count = await reader.readVarUint(32);
     for (int i = 0; i < count; ++i) {
