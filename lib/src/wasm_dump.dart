@@ -117,7 +117,7 @@ class WasmDump {
             thisPrefix = indent.thisIndent;
             prefix = indent.nextIndent;
           }
-          String line = await op.readImmediatesAndFormat(reader, indent: thisPrefix.length);
+          String line = await op.readImmediatesAndFormat(reader, indent: thisPrefix.length, width: 42);
           out.writeln("$thisPrefix$line");
         }
         if (failed && reader.bytesRead < end) {

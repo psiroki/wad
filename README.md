@@ -55,31 +55,31 @@ Section size: 0x2a
 
 - Function #0
 
-    get_local 0                                                                 # read a local variable or parameter
-    get_local 1                                                                 # read a local variable or parameter
+    get_local 0                           # read a local variable or parameter
+    get_local 1                           # read a local variable or parameter
     i32.add
-  end                                                                           # end a block, loop, or if
+  end                                     # end a block, loop, or if
 
 - Function #1
   Local #0: 1 of i32
 
-    i32.const 1                                                                 # a constant value interpreted as i32
-    set_local 1                                                                 # write a local variable or parameter
-    loop                                                                        # begin a block which can also form control flow loops
-      get_local 0                                                               # read a local variable or parameter
-      get_local 1                                                               # read a local variable or parameter
+    i32.const 1                           # a constant value interpreted as i32
+    set_local 1                           # write a local variable or parameter
+    loop                                  # begin a block which can also form control flow loops
+      get_local 0                         # read a local variable or parameter
+      get_local 1                         # read a local variable or parameter
       i32.mul
-      set_local 1                                                               # write a local variable or parameter
-      get_local 0                                                               # read a local variable or parameter
-      i32.const 1                                                               # a constant value interpreted as i32
+      set_local 1                         # write a local variable or parameter
+      get_local 0                         # read a local variable or parameter
+      i32.const 1                         # a constant value interpreted as i32
       i32.sub
-      tee_local 0                                                               # write a local variable or parameter and return the same value
-      i32.const 0                                                               # a constant value interpreted as i32
+      tee_local 0                         # write a local variable or parameter and return the same value
+      i32.const 0                         # a constant value interpreted as i32
       i32.ne
-      br_if 0                                                                   # conditional break that targets an outer nested block
-    end                                                                         # end a block, loop, or if
-    get_local 1                                                                 # read a local variable or parameter
-  end                                                                           # end a block, loop, or if
+      br_if 0                             # conditional break that targets an outer nested block
+    end                                   # end a block, loop, or if
+    get_local 1                           # read a local variable or parameter
+  end                                     # end a block, loop, or if
 
 
 

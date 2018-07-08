@@ -111,19 +111,19 @@ class Immediate {
 class Opcode {
   const Opcode(this.code, this.immediates, this.mnemonic, this.docs);
 
-  FutureOr<String> readImmediatesAndFormat(StreamReader reader, {int indent: 0}) async {
+  FutureOr<String> readImmediatesAndFormat(StreamReader reader, {int indent: 0, int width: 80}) async {
     StringBuffer sb = new StringBuffer(mnemonic);
     for (Immediate im in immediates) {
       String s = await im.readAndFormat(reader, ignoreName: immediates.length == 1);
       if (s != null) sb..write(" ")..write(s);
     }
     if (docs?.isNotEmpty ?? false) {
-      if (sb.length < 80 - indent) {
-        sb.write("".padLeft(80 - indent - sb.length));
+      if (sb.length < width - indent) {
+        sb.write("".padLeft(width - indent - sb.length));
         sb.write("# $docs");
         return sb.toString();
       } else {
-        String padding = "".padLeft(80 - indent);
+        String padding = "".padLeft(width - indent);
         return "$padding# $docs\n$sb";
       }
     }
