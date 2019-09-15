@@ -26,7 +26,7 @@ class WasmDump {
       int end = reader.bytesRead + sectionSize;
       if (sectionId == 0) {
         int nameLength = await reader.readVarUint(32);
-        out.writeln("Custom section: ${JSON.encode(UTF8.decode(await reader.readBytes(nameLength)))}");
+        out.writeln("Custom section: ${json.encode(utf8.decode(await reader.readBytes(nameLength)))}");
       }
       int length = end - reader.bytesRead;
       out.writeln();
@@ -134,11 +134,11 @@ class WasmDump {
     int count = await reader.readVarUint(32);
     for (int i = 0; i < count; ++i) {
       int nameLength = await reader.readVarUint(32);
-      String name = UTF8.decode(await reader.readBytes(nameLength));
+      String name = utf8.decode(await reader.readBytes(nameLength));
       // external kind comes here
       int kind = await reader.readByte();
       int index = await reader.readVarUint(32);
-      out.writeln("- Export ${JSON.encode(name)} of kind ${externalKindToString(kind)} \u2192 entry #$index");
+      out.writeln("- Export ${json.encode(name)} of kind ${externalKindToString(kind)} \u2192 entry #$index");
     }
   }
 

@@ -3,11 +3,11 @@ import "dart:typed_data";
 
 import "tables.dart";
 
-int _getUint32(TypedData data) => data.buffer.asByteData().getUint32(0, Endianness.LITTLE_ENDIAN);
+int _getUint32(TypedData data) => data.buffer.asByteData().getUint32(0, Endian.little);
 
-double _getFloat32(TypedData data) => data.buffer.asByteData().getFloat32(0, Endianness.LITTLE_ENDIAN);
+double _getFloat32(TypedData data) => data.buffer.asByteData().getFloat32(0, Endian.little);
 
-double _getFloat64(TypedData data) => data.buffer.asByteData().getFloat64(0, Endianness.LITTLE_ENDIAN);
+double _getFloat64(TypedData data) => data.buffer.asByteData().getFloat64(0, Endian.little);
 
 class StreamReader {
   StreamReader(this.source) : sourceIterator = new StreamIterator(source);
@@ -47,16 +47,18 @@ class StreamReader {
       FutureOr<int> byte = readByte();
       if (byte == null) return bitsSoFar > 0 ? _optApplySign(valueSoFar, bitsSoFar, signed: signed) : null;
       if (byte is Future) {
-        return byte.then((int nextByte) {
+        Future<int> b = byte;
+        return b.then((int nextByte) {
           valueSoFar |= (nextByte & 0x7f) << bitsSoFar;
           bitsSoFar += 7;
           if (nextByte & 0x80 == 0 || bitsSoFar >= maxBits) return _optApplySign(valueSoFar, bitsSoFar, signed: signed);
           return _readVarUint(maxBits, valueSoFar, bitsSoFar, signed: signed);
         });
       } else {
-        valueSoFar |= (byte & 0x7f) << bitsSoFar;
+        int b = byte;
+        valueSoFar |= (b & 0x7f) << bitsSoFar;
         bitsSoFar += 7;
-        if (byte & 0x80 == 0) return _optApplySign(valueSoFar, bitsSoFar, signed: signed);
+        if (b & 0x80 == 0) return _optApplySign(valueSoFar, bitsSoFar, signed: signed);
       }
     }
     return _optApplySign(valueSoFar, bitsSoFar, signed: signed);
@@ -70,20 +72,20 @@ class StreamReader {
 
   FutureOr<int> readUint32() {
     FutureOr<Uint8List> result = readBytes(4);
-    if (result is Future) return result.then(_getUint32);
-    return _getUint32(result);
+    if (result is Future<Uint8List>) return result.then(_getUint32);
+    return _getUint32(result as Uint8List);
   }
 
   FutureOr<double> readFloat32() {
     FutureOr<Uint8List> result = readBytes(4);
-    if (result is Future) return result.then(_getFloat32);
-    return _getFloat32(result);
+    if (result is Future<Uint8List>) return result.then(_getFloat32);
+    return _getFloat32(result as Uint8List);
   }
 
   FutureOr<double> readFloat64() {
     FutureOr<Uint8List> result = readBytes(8);
-    if (result is Future) return result.then(_getFloat64);
-    return _getFloat64(result);
+    if (result is Future<Uint8List>) return result.then(_getFloat64);
+    return _getFloat64(result as Uint8List);
   }
 
   FutureOr<Uint8List> readBytes(int numBytes) {
