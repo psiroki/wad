@@ -13,7 +13,7 @@ class BlockType extends WasmType {
 
   FutureOr<String> readAndFormat(StreamReader reader) {
     FutureOr<int> type = reader.readVarUint(7);
-    if (type is Future) type.then(_typeToString);
+    if (type is Future<int>) type.then(_typeToString);
     return _typeToString(type);
   }
 
@@ -26,16 +26,25 @@ class BlockType extends WasmType {
   String toString() => "block_type";
 }
 
-class BrTableType extends WasmType {
+abstract class AbstractImmediate {
+  FutureOr<String> readAndFormat(StreamReader reader, {bool ignoreName: false});
+}
+
+class BrTableType extends WasmType implements AbstractImmediate {
   const BrTableType();
 
-  FutureOr<String> readAndFormat(StreamReader reader) async {
+  @override
+  FutureOr<String> readAndFormat(StreamReader reader, {bool ignoreName: false}) async {
     int count = await reader.readVarUint(32);
     List<int> blockIndices = [];
     for (int i = 0; i < count; ++i) blockIndices.add(await reader.readVarUint(32));
     int defaultBlock = await reader.readVarUint(32);
     return "$blockIndices default: $defaultBlock";
   }
+
+  String get name => null;
+
+  WasmType get type => null;
 
   @override
   String toString() => "br_table";
@@ -60,7 +69,7 @@ class VarIntType extends WasmType {
 
   FutureOr<String> readAndFormat(StreamReader reader) {
     FutureOr<int> val = signed ? reader.readVarInt(maxBits) : reader.readVarUint(maxBits);
-    if (val is Future) return val.then((int val) => val.toString());
+    if (val is Future<int>) return val.then((int val) => val.toString());
     return val.toString();
   }
 
@@ -76,7 +85,7 @@ class FloatType extends WasmType {
 
   FutureOr<String> readAndFormat(StreamReader reader) {
     FutureOr<double> val = numBits == 32 ? reader.readFloat32() : reader.readFloat64();
-    if (val is Future) return val.then((double val) => val.toString());
+    if (val is Future<double>) return val.then((double val) => val.toString());
     return val.toString();
   }
 
@@ -86,20 +95,21 @@ class FloatType extends WasmType {
   final int numBits;
 }
 
-class Immediate {
+class Immediate implements AbstractImmediate {
   const Immediate(this.name, this.type);
 
+  @override
   FutureOr<String> readAndFormat(StreamReader reader, {bool ignoreName: false}) {
     FutureOr<String> value = type.readAndFormat(reader);
     if (value == null) return null;
-    if (value is Future) return value.then((value) => _formatWithValueString(value, ignoreName: ignoreName));
-    return _formatWithValueString(value, ignoreName: ignoreName);
+    if (value is Future<String>) return value.then((value) => _formatWithValueString(name, value, ignoreName: ignoreName));
+    return _formatWithValueString(name, value, ignoreName: ignoreName);
   }
 
   @override
   String toString() => "${name ?? ''}: $type";
 
-  String _formatWithValueString(String value, {bool ignoreName: false}) {
+  static String _formatWithValueString(String name, String value, {bool ignoreName: false}) {
     if (ignoreName || name == null) return value;
     return "$name: $value";
   }
@@ -113,7 +123,7 @@ class Opcode {
 
   FutureOr<String> readImmediatesAndFormat(StreamReader reader, {int indent: 0, int width: 80}) async {
     StringBuffer sb = new StringBuffer(mnemonic);
-    for (Immediate im in immediates) {
+    for (AbstractImmediate im in immediates) {
       String s = await im.readAndFormat(reader, ignoreName: immediates.length == 1);
       if (s != null) sb..write(" ")..write(s);
     }
@@ -131,7 +141,7 @@ class Opcode {
   }
 
   final int code;
-  final List<Immediate> immediates;
+  final List<AbstractImmediate> immediates;
   final String mnemonic;
   final String docs;
 }
