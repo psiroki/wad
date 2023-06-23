@@ -5,19 +5,19 @@ import "io.dart";
 abstract class WasmType {
   const WasmType();
 
-  FutureOr<String> readAndFormat(StreamReader reader);
+  FutureOr<String?> readAndFormat(StreamReader reader);
 }
 
 class BlockType extends WasmType {
   const BlockType();
 
-  FutureOr<String> readAndFormat(StreamReader reader) {
-    FutureOr<int> type = reader.readVarUint(7);
-    if (type is Future<int>) type.then(_typeToString);
-    return _typeToString(type);
+  FutureOr<String?> readAndFormat(StreamReader reader) {
+    FutureOr<int?> type = reader.readVarUint(7);
+    if (type is Future<int?>) type.then((int? type) => type!).then(_typeToString);
+    return _typeToString(type as int);
   }
 
-  String _typeToString(int type) {
+  String? _typeToString(int type) {
     if (type == 0x40) return null;
     return typeToString(type);
   }
@@ -27,14 +27,14 @@ class BlockType extends WasmType {
 }
 
 abstract class AbstractImmediate {
-  FutureOr<String> readAndFormat(StreamReader reader, {bool ignoreName: false});
+  FutureOr<String?> readAndFormat(StreamReader reader, {bool ignoreName = false});
 }
 
 class BrTableType extends WasmType implements AbstractImmediate {
   const BrTableType();
 
   @override
-  FutureOr<String> readAndFormat(StreamReader reader, {bool ignoreName: false}) async {
+  FutureOr<String> readAndFormat(StreamReader reader, {bool ignoreName = false}) async {
     int count = await reader.readVarUint(32);
     List<int> blockIndices = [];
     for (int i = 0; i < count; ++i) blockIndices.add(await reader.readVarUint(32));
@@ -42,9 +42,9 @@ class BrTableType extends WasmType implements AbstractImmediate {
     return "$blockIndices default: $defaultBlock";
   }
 
-  String get name => null;
+  String? get name => null;
 
-  WasmType get type => null;
+  WasmType? get type => null;
 
   @override
   String toString() => "br_table";
@@ -65,11 +65,11 @@ class MemoryImmediateType extends WasmType {
 }
 
 class VarIntType extends WasmType {
-  const VarIntType(this.maxBits, {this.signed: true});
+  const VarIntType(this.maxBits, {this.signed = true});
 
   FutureOr<String> readAndFormat(StreamReader reader) {
-    FutureOr<int> val = signed ? reader.readVarInt(maxBits) : reader.readVarUint(maxBits);
-    if (val is Future<int>) return val.then((int val) => val.toString());
+    FutureOr<int?> val = signed ? reader.readVarInt(maxBits) : reader.readVarUint(maxBits);
+    if (val is Future<int?>) return val.then((int? val) => val!.toString());
     return val.toString();
   }
 
@@ -99,32 +99,32 @@ class Immediate implements AbstractImmediate {
   const Immediate(this.name, this.type);
 
   @override
-  FutureOr<String> readAndFormat(StreamReader reader, {bool ignoreName: false}) {
-    FutureOr<String> value = type.readAndFormat(reader);
+  FutureOr<String?> readAndFormat(StreamReader reader, {bool ignoreName = false}) {
+    FutureOr<String?> value = type.readAndFormat(reader);
     if (value == null) return null;
     if (value is Future<String>) return value.then((value) => _formatWithValueString(name, value, ignoreName: ignoreName));
-    return _formatWithValueString(name, value, ignoreName: ignoreName);
+    return _formatWithValueString(name, value as String, ignoreName: ignoreName);
   }
 
   @override
   String toString() => "${name ?? ''}: $type";
 
-  static String _formatWithValueString(String name, String value, {bool ignoreName: false}) {
+  static String _formatWithValueString(String? name, String value, {bool ignoreName = false}) {
     if (ignoreName || name == null) return value;
     return "$name: $value";
   }
 
-  final String name;
+  final String? name;
   final WasmType type;
 }
 
 class Opcode {
   const Opcode(this.code, this.immediates, this.mnemonic, this.docs);
 
-  FutureOr<String> readImmediatesAndFormat(StreamReader reader, {int indent: 0, int width: 80}) async {
-    StringBuffer sb = new StringBuffer(mnemonic);
+  FutureOr<String> readImmediatesAndFormat(StreamReader reader, {int indent = 0, int width = 80}) async {
+    StringBuffer sb = StringBuffer(mnemonic);
     for (AbstractImmediate im in immediates) {
-      String s = await im.readAndFormat(reader, ignoreName: immediates.length == 1);
+      String? s = await im.readAndFormat(reader, ignoreName: immediates.length == 1);
       if (s != null) sb..write(" ")..write(s);
     }
     if (docs?.isNotEmpty ?? false) {
@@ -143,7 +143,7 @@ class Opcode {
   final int code;
   final List<AbstractImmediate> immediates;
   final String mnemonic;
-  final String docs;
+  final String? docs;
 }
 
 const int typeSectionId = 1;

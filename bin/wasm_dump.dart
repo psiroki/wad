@@ -3,7 +3,7 @@ import "dart:io";
 
 import "package:wad/wad.dart";
 
-Future<Null> main(List<String> args) async {
+Future<void> main(List<String> args) async {
   args = args.toList();
   bool disassemble = true;
   bool doNotParse = false;
@@ -22,6 +22,6 @@ Future<Null> main(List<String> args) async {
     if (remove > 0) args.removeRange(i, i + remove);
   }
   Stream<List<int>> input = stdin;
-  if (args.isNotEmpty) input = new File(args.last).openRead();
-  await new WasmDump(input, stdout, disassemble: disassemble, doNotParse: doNotParse).dump();
+  if (args.isNotEmpty) input = File(args.last).openRead();
+  await WasmDump(input, stdout, disassemble: disassemble, doNotParse: doNotParse).dump();
 }

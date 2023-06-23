@@ -5,20 +5,20 @@ import "io.dart";
 import "tables.dart";
 
 class WasmDump {
-  WasmDump(Stream<List<int>> input, StringSink output, {this.disassemble: true, this.doNotParse: false}) :
-    reader = new StreamReader(input),
-    out = new DumpHelper(output);
+  WasmDump(Stream<List<int>> input, StringSink output, {this.disassemble = true, this.doNotParse = false}) :
+    reader = StreamReader(input),
+    out = DumpHelper(output);
 
-  Future<Null> dump() async {
+  Future<void> dump() async {
     out.writeln("Magic:");
     out.dumpBytes(await reader.readBytes(4));
     out.writeln("Version:");
     out.dumpBytes(await reader.readBytes(4));
     while (!reader.isAtEnd) {
-      int sectionId = await reader.readByte();
+      int? sectionId = await reader.readByte();
       if (sectionId == null) break;
       out.write("\n\nSection code: 0x${sectionId.toRadixString(16).padLeft(2, '0')}");
-      String name = knownSectionIds[sectionId];
+      String? name = knownSectionIds[sectionId];
       if (name != null) out..write(" ")..write(name);
       out.writeln();
       int sectionSize = await reader.readVarUint(32);
@@ -53,7 +53,7 @@ class WasmDump {
     }
   }
 
-  Future<Null> _dumpFunctionSection() async {
+  Future<void> _dumpFunctionSection() async {
     int count = await reader.readVarUint(32);
     for (int i = 0; i < count; ++i) {
       int typeIndex = await reader.readVarUint(32);
@@ -61,7 +61,7 @@ class WasmDump {
     }
   }
 
-  Future<Null> _dumpTypeSection(int end) async {
+  Future<void> _dumpTypeSection(int end) async {
     int count = await reader.readVarUint(32);
     for (int i = 0; i < count; ++i) {
       int type = await reader.readVarUint(7);
@@ -86,7 +86,7 @@ class WasmDump {
     }
   }
 
-  Future<Null> _dumpCodeSection() async {
+  Future<void> _dumpCodeSection() async {
     int count = await reader.readVarUint(32);
     for (int i = 0; i < count; ++i) {
       int size = await reader.readVarUint(32);
@@ -95,8 +95,8 @@ class WasmDump {
       int numLocals = await reader.readVarUint(32);
       for (int j = 0; j < numLocals; ++j) {
         int count = await reader.readVarUint(32);
-        int type = await reader.readByte();
-        out.writeln("  Local #$j: $count of ${typeToString(type)}");
+        int? type = await reader.readByte();
+        out.writeln("  Local #$j: $count of ${typeToString(type!)}");
       }
       int codeBytes = end - reader.bytesRead;
       out.writeln();
@@ -104,15 +104,15 @@ class WasmDump {
         String prefix = "".padLeft(4);
         bool failed = false;
         while (reader.bytesRead < end) {
-          int b = await reader.readByte();
+          int? b = await reader.readByte();
           if (b == null) break;
-          Opcode op = knownOpcodes[b];
+          Opcode? op = knownOpcodes[b];
           if (op == null) {
             failed = true;
             break;
           }
           String thisPrefix = prefix;
-          Indent indent = indentForOp(b, prefix, indentDepth: 2);
+          Indent? indent = indentForOp(b, prefix, indentDepth: 2);
           if (indent != null) {
             thisPrefix = indent.thisIndent;
             prefix = indent.nextIndent;
@@ -130,15 +130,15 @@ class WasmDump {
     }
   }
 
-  Future<Null> _dumpExportSection() async {
+  Future<void> _dumpExportSection() async {
     int count = await reader.readVarUint(32);
     for (int i = 0; i < count; ++i) {
       int nameLength = await reader.readVarUint(32);
       String name = utf8.decode(await reader.readBytes(nameLength));
       // external kind comes here
-      int kind = await reader.readByte();
+      int? kind = await reader.readByte();
       int index = await reader.readVarUint(32);
-      out.writeln("- Export ${json.encode(name)} of kind ${externalKindToString(kind)} \u2192 entry #$index");
+      out.writeln("- Export ${json.encode(name)} of kind ${externalKindToString(kind!)} \u2192 entry #$index");
     }
   }
 
